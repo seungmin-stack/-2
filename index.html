@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+
+
+
+<html lang="ko">
+
+
+
+<head>
+
+
+
+    <meta charset="UTF-8">
+
+
+
+    <title>AI Music Separator Pro</title>
+
+
+
+    <!-- WaveSurfer.js: 파형 시각화 -->
+
+
+
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+
+
+
+    <!-- JSZip: 전체 파일 압축 다운로드 -->
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Regions 플러그인 추가 -->
+
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+
+    <style>
+
+
+
+        :root {
+
+
+
+            --bg-main: #0a0e14;
+
+
+
+            --card-bg: rgba(30, 39, 50, 0.8);
+
+
+
+            --accent-color: #00d4ff;
+
+
+
+            --text-main: #e0e6ed;
+
+
+
+            --glass-border: rgba(255, 255, 255, 0.1);
+
+
+
+        }
+
+
+
+
+
+
+
+        body {
+
+
+
+            font-family: 'Pretendard', -apple-system, sans-serif;
+
+
+
+            background: radial-gradient(circle at top right, #1e293b, transparent), var(--bg-main);
+
+
+
+            background-attachment: fixed;
+
+
+
+            color: var(--text-main);
+
+
+
+            display: flex; justify-content: center; align-items: center;
+
+
+
+            min-height: 100vh; margin: 0;
+
+
+
+        }
+
+
+
+
+
+
+
+        .container {
+
+
+
+            width: 90%; max-width: 650px; background: var(--card-bg);
+
+
+
+            padding: 40px; border-radius: 24px; backdrop-filter: blur(12px);
+
+
+
+            border: 1px solid var(--glass-border); text-align: center;
+
+
+
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+
+
+
+        }
+
+
+
+
+
+
+
+        .upload-box {
+
+
+
+            background: rgba(0, 0, 0, 0.2); border: 2px dashed var(--glass-border);
+
+
+
+            padding: 40px 20px; border-radius: 20px; margin-bottom: 25px;
+
+
+
+            transition: 0.3s; cursor: pointer;
+
+
+
+        }
+
+
+
+        .upload-box.dragover {
+
+
+
+            border-color: var(--accent-color);
+
+
+
+            background: rgba(0, 212, 255, 0.05);
+
+
+
+        }
+
+
+
+        .upload-box.disabled {
+
+
+
+            opacity: 0.5; cursor: not-allowed; pointer-events: none;
+
+
+
+        }
+
+
+
+
+
+
+
+        input[type="file"] { display: none; }
+
+
+
+
+
+
+
+        .custom-file-upload {
+
+
+
+            display: inline-block; padding: 14px 28px;
+
+
+
+            background: rgba(0, 212, 255, 0.05); border: 1px solid var(--accent-color);
+
+
+
+            border-radius: 50px; color: var(--accent-color);
+
+
+
+            font-weight: 600; margin-bottom: 20px; cursor: pointer;
+
+
+
+        }
+
+
+
+
+
+
+
+        button#startBtn {
+
+
+
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+
+
+
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s;
+
+
+
+            background: linear-gradient(135deg, #00d4ff, #0072ff); color: #fff;
+
+
+
+        }
+
+
+
+        button:disabled { background: #334155 !important; cursor: not-allowed; }
+
+
+
+
+
+
+
+        .progress-container {
+
+
+
+            width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1);
+
+
+
+            border-radius: 10px; margin: 20px 0; display: none; overflow: hidden;
+
+
+
+        }
+
+
+
+        .progress-bar { width: 0%; height: 100%; background: var(--accent-color); transition: 0.3s; }
+
+
+
+
+
+
+
+        .result-box { display: none; margin-top: 30px; }
+
+
+
+        .result-header {
+
+
+
+            display: flex; justify-content: space-between; align-items: center;
+
+
+
+            margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px;
+
+
+
+        }
+
+
+
+
+
+
+
+        .link-card {
+
+
+
+            background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border);
+
+
+
+            border-radius: 15px; padding: 15px; margin-bottom: 15px; text-align: left;
+
+
+
+        }
+
+
+
+        .waveform-container { background: #000; border-radius: 8px; margin: 12px 0; }
+
+
+
+       
+
+
+
+        .play-btn {
+
+
+
+            background: transparent; border: 1px solid var(--accent-color);
+
+
+
+            color: var(--accent-color); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+
+
+
+            font-size: 13px; transition: 0.2s;
+
+
+
+        }
+
+
+
+        .play-btn:hover { background: rgba(0, 212, 255, 0.1); }
+
+
+
+
+
+
+
+        .reset-file-btn {
+
+
+
+            display: none; margin: 15px auto 0; background: transparent;
+
+
+
+            border: 1px solid #64748b; color: #64748b; padding: 8px 20px;
+
+
+
+            border-radius: 20px; cursor: pointer; font-size: 13px;
+
+
+
+        }
+
+
+
+    </style>
+
+
+
+</head>
+
+
+
+<body>
+
+
+
+    <canvas id="bgVisualizer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+
+
+    <div class="container">
+
+
+
+        <h1>AI Music Separator Pro</h1>
+
+
+
+       
+
+
+
+        <div class="upload-area">
+
+
+
+            <div class="upload-box" id="dropZone">
+
+
+
+                <div class="custom-file-upload">
+
+
+
+                    <span id="fileNameDisplay">🎵 파일을 선택하거나 여기로 드래그</span>
+
+
+
+                </div>
+
+
+
+                <input type="file" id="musicFile" accept="audio/*" onchange="updateFileName()">
+
+
+
+                <!-- 버튼 클릭 시 이벤트가 박스로 퍼지지 않게 조치할 예정 -->
+
+
+
+                <button type="button" id="startBtn" onclick="startSeparation(event)">AI 분리 시작</button>
+
+
+
+            </div>
+
+
+
+            <button type="button" id="resetBtn" class="reset-file-btn" onclick="resetUpload()">🧹 결과 지우고 새로 만들기</button>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div id="status" style="font-size: 14px; color: #94a3b8; margin: 10px 0;">파일을 선택해주세요.</div>
+
+
+
+
+
+
+
+        <div class="progress-container" id="progressContainer">
+
+
+
+            <div class="progress-bar" id="progressBar"></div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- 결과 영역 -->
+
+
+
+        <div id="result" class="result-box">
+
+
+
+            <div class="result-header">
+
+
+
+                <button class="play-btn" onclick="toggleAllTracks()" id="masterPlayBtn">▶ 전체 재생</button>
+
+
+
+                <button class="play-btn" style="border-color: #ffcc00; color: #ffcc00;" onclick="downloadAllAsZip()">📦 전체 ZIP 다운로드</button>
+
+
+
+            </div>
+
+
+
+            <div id="tracks"></div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <script>
+
+
+
+        let wavesurfers = {};
+
+
+
+        const trackNames = ['vocals', 'drums', 'bass', 'other'];
+
+
+
+        const host = "http://127.0.0.1:8000";
+
+
+
+
+
+
+
+        const dropZone = document.getElementById('dropZone');
+
+
+
+        const fileInput = document.getElementById('musicFile');
+
+
+
+        const progBar = document.getElementById('progressBar');
+
+
+
+        const progCont = document.getElementById('progressContainer');
+
+
+
+        const statusText = document.getElementById('status');
+
+
+
+
+
+
+
+
+
+
+
+        dropZone.addEventListener('click', (e) => {
+
+
+
+    // 클릭한 게 버튼(startBtn)이 아닐 때만 파일 창 열기
+
+
+
+        if (e.target.id !== 'startBtn') {
+
+
+
+            fileInput.click();
+
+
+
+        }
+
+
+
+    });
+
+
+
+        // 파일 이름 업데이트
+
+
+
+        function updateFileName() {
+
+
+
+            if (fileInput.files.length > 0) {
+
+
+
+                document.getElementById('fileNameDisplay').innerText = "선택됨: " + fileInput.files[0].name;
+
+
+
+                statusText.innerText = "분리 준비 완료!";
+
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+
+        // 전체 초기화 (새로 만들기)
+
+
+
+        function resetUpload() {
+
+
+
+            fileInput.value = "";
+
+
+
+            document.getElementById('fileNameDisplay').innerText = "🎵 파일을 선택하거나 여기로 드래그";
+
+
+
+            dropZone.classList.remove('disabled');
+
+
+
+            document.getElementById('startBtn').disabled = false;
+
+
+
+            document.getElementById('resetBtn').style.display = 'none';
+
+
+
+            document.getElementById('result').style.display = 'none';
+
+
+
+            progCont.style.display = 'none';
+
+
+
+            statusText.innerText = "파일을 선택해주세요.";
+
+
+
+            Object.values(wavesurfers).forEach(ws => ws.destroy());
+
+
+
+            wavesurfers = {};
+
+
+
+        }
+
+
+
+
+
+
+
+        // 드래그 앤 드롭
+
+
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ln => {
+
+
+
+            dropZone.addEventListener(ln, e => { e.preventDefault(); e.stopPropagation(); });
+
+
+
+        });
+
+
+
+        dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+
+
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+
+
+        dropZone.addEventListener('drop', (e) => {
+
+
+
+            dropZone.classList.remove('dragover');
+
+
+
+            fileInput.files = e.dataTransfer.files;
+
+
+
+            updateFileName();
+
+
+
+        });
+
+
+
+
+
+
+
+        // 핵심: 분리 시작 함수
+        // 핵심: 분리 시작 함수 (서버 통신 로직 추가)
+        async function startSeparation(event) {
+            event.stopPropagation(); // 박스 클릭 방지
+
+            if (fileInput.files.length === 0) return alert("파일을 선택해주세요!");
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            // UI 상태 업데이트
+            statusText.innerText = "AI가 음악을 분석하고 분리 중입니다. 잠시만 기다려주세요...";
+            progCont.style.display = 'block';
+            progBar.style.width = '40%'; // 가짜 진행률 (서버 처리 중)
+            document.getElementById('startBtn').disabled = true;
+            dropZone.classList.add('disabled'); // 처리 중 클릭 방지
+
+            try {
+                // 1. 서버에 파일 전송 (POST 요청)
+                const response = await fetch(host + "/separate", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("서버 응답 오류 (404 또는 500)");
+
+                // 2. 서버로부터 결과 JSON 받기 (여기서 data가 정의됩니다!)
+                const data = await response.json(); 
+                
+                // 3. UI 마무리 작업
+                progBar.style.width = '100%';
+                statusText.innerText = "분리 완료!";
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('resetBtn').style.display = 'block';
+                document.getElementById('tracks').innerHTML = "";
+
+                // 4. 각 트랙별 시각화 및 루프 설정
+                trackNames.forEach(name => {
+                    createTrackUI(name);
+
+                    // Regions 플러그인 설정
+                    const wsRegions = WaveSurfer.Regions.create();
+
+                    const ws = WaveSurfer.create({
+                        container: `#${name}-waveform`,
+                        waveColor: '#34495e',
+                        progressColor: '#00d4ff',
+                        height: 60,
+                        barWidth: 2,
+                        responsive: true,
+                        plugins: [wsRegions]
+                    });
+
+                    // 서버에서 받은 경로로 오디오 로드
+                    ws.load(host + data.links[name]);
+                    wavesurfers[name] = ws;
+
+                    // 구간 반복 기능 활성화
+                    wsRegions.enableDragSelection({ color: 'rgba(0, 212, 255, 0.2)' });
+                    wsRegions.on('region-out', (region) => region.play());
+                    wsRegions.on('region-created', () => {
+                        document.getElementById(`${name}-loop-badge`).style.display = 'inline';
+                    });
+                    wsRegions.on('region-clicked', (region, e) => {
+                        e.stopPropagation();
+                        region.remove();
+                        document.getElementById(`${name}-loop-badge`).style.display = 'none';
+                    });
+
+                    // 첫 재생 시 비주얼라이저 실행
+                    ws.once('play', () => {
+                        if (typeof isVisualizerInited === 'undefined' || !isVisualizerInited) {
+                            initVisualizer(ws);
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error("Error details:", error);
+                statusText.innerText = "오류 발생: " + error.message;
+                document.getElementById('startBtn').disabled = false;
+                dropZone.classList.remove('disabled');
+                progCont.style.display = 'none';
+            }
+        }
+
+
+       
+
+
+
+        
+
+
+
+
+
+
+
+        // 트랙별 카드 생성
+
+
+
+        function createTrackUI(name) {
+
+    const icons = { vocals: '🎤', drums: '🥁', bass: '🎸', other: '🎹' };
+
+    const html = `
+
+        <div class="link-card">
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                <div style="font-weight: bold; color: var(--accent-color);">${icons[name]} ${name.toUpperCase()}</div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+
+                    <!-- 반복 상태 표시 배지 -->
+
+                    <span id="${name}-loop-badge" style="font-size: 10px; color: #ffcc00; display: none; border: 1px solid #ffcc00; padding: 1px 4px; border-radius: 4px;">LOOPING</span>
+
+                    <span style="font-size: 10px; color: #64748b;">VOL</span>
+
+                    <input type="range" min="0" max="1" step="0.1" value="1"
+
+                           oninput="wavesurfers['${name}'].setVolume(this.value)"
+
+                           style="width: 60px; cursor: pointer;">
+
+                </div>
+
+            </div>
+
+            <div id="${name}-waveform" class="waveform-container"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                <div>
+
+                    <button class="play-btn" onclick="wavesurfers['${name}'].playPause()">▶/⏸</button>
+
+                    <button class="play-btn" style="border-color: #475569; color: #94a3b8;" onclick="wavesurfers['${name}'].setTime(0)">처음으로</button>
+
+                </div>
+
+                <button class="play-btn" style="background: var(--accent-color); color: #000; font-weight: bold; border: none;"
+
+                        onclick="forceDownload(wavesurfers['${name}'].getSrc(), '${name}.wav')">다운로드</button>
+
+            </div>
+
+            <div style="font-size: 10px; color: #475569; margin-top: 8px;">💡 파형을 드래그하여 구간 반복 / 영역 더블 클릭 시 해제</div>
+
+        </div>`;
+
+    document.getElementById('tracks').insertAdjacentHTML('beforeend', html);
+
+}
+
+
+
+       
+
+
+
+
+
+
+
+        // 강제 다운로드 (창 뜨지 않게)
+
+
+
+        async function forceDownload(url, filename) {
+
+
+
+            if(!url) return;
+
+
+
+            statusText.innerText = filename + " 준비 중...";
+
+
+
+            const res = await fetch(url);
+
+
+
+            const blob = await res.blob();
+
+
+
+            const blobUrl = window.URL.createObjectURL(blob);
+
+
+
+            const a = document.createElement('a');
+
+
+
+            a.href = blobUrl;
+
+
+
+            a.download = filename;
+
+
+
+            document.body.appendChild(a);
+
+
+
+            a.click();
+
+
+
+            document.body.removeChild(a);
+
+
+
+            window.URL.revokeObjectURL(blobUrl);
+
+
+
+            statusText.innerText = "다운로드 완료";
+
+
+
+        }
+
+
+
+
+
+
+
+        // ZIP 다운로드
+
+
+
+        async function downloadAllAsZip() {
+
+
+
+            const zip = new JSZip();
+
+
+
+            const folder = zip.folder("separated_music");
+
+
+
+            statusText.innerText = "압축 파일을 생성하고 있습니다...";
+
+
+
+
+
+
+
+            try {
+
+
+
+                for (const name of trackNames) {
+
+
+
+                    const url = wavesurfers[name].getSrc();
+
+
+
+                    const res = await fetch(url);
+
+
+
+                    const blob = await res.blob();
+
+
+
+                    folder.file(`${name}.wav`, blob);
+
+
+
+                }
+
+
+
+                const content = await zip.generateAsync({type:"blob"});
+
+
+
+                const a = document.createElement('a');
+
+
+
+                a.href = URL.createObjectURL(content);
+
+
+
+                a.download = "all_tracks.zip";
+
+
+
+                a.click();
+
+
+
+                statusText.innerText = "ZIP 다운로드 완료!";
+
+
+
+            } catch (e) {
+
+
+
+                statusText.innerText = "압축 실패!";
+
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+
+        // 전체 재생/일시정지
+
+
+
+        function toggleAllTracks() {
+
+
+
+            const first = Object.values(wavesurfers)[0];
+
+
+
+            if (!first) return;
+
+
+
+            const isPlaying = first.isPlaying();
+
+
+
+            Object.values(wavesurfers).forEach(ws => isPlaying ? ws.pause() : ws.play());
+
+
+
+            document.getElementById('masterPlayBtn').innerText = isPlaying ? "▶ 전체 재생" : "⏸ 전체 일시정지";
+
+
+
+        }
+
+
+
+
+
+
+
+        let audioCtx, analyser, dataArray, canvas, ctx, animationId;
+
+
+
+
+
+
+
+function initVisualizer(ws) {
+
+    canvas = document.getElementById('bgVisualizer');
+
+    ctx = canvas.getContext('2d');
+
+   
+
+    canvas.width = window.innerWidth;
+
+    canvas.height = window.innerHeight;
+
+
+
+    try {
+
+        audioCtx = WaveSurfer.AudioContext.get();
+
+       
+
+        // 브라우저 보안 정책 대응: Suspended 상태라면 Resume
+
+        if (audioCtx.state === 'suspended') {
+
+            audioCtx.resume();
+
+        }
+
+
+
+        analyser = audioCtx.createAnalyser();
+
+        analyser.fftSize = 256;
+
+       
+
+        // 핵심 해결책: 소리 흐름의 통로를 직접 연결
+
+        // 1. WaveSurfer의 미디어 요소(오디오 태그)를 소스로 가져옴
+
+        const source = audioCtx.createMediaElementSource(ws.media);
+
+       
+
+        // 2. 소스 -> 분석기 (시각화용)
+
+        source.connect(analyser);
+
+       
+
+        // 3. 분석기 -> 스피커 (출력용) ⭐️ 이 코드가 없으면 볼륨 조절이 안 되거나 소리가 안 들림!
+
+        analyser.connect(audioCtx.destination);
+
+       
+
+        isVisualizerInited = true;
+
+        console.log("시각화 및 오디오 출력 연결 완료!");
+
+        draw();
+
+    } catch(e) {
+
+        console.error("비주얼라이저 설정 중 오류:", e);
+
+    }
+
+}
+
+
+
+
+
+
+
+function draw() {
+
+
+
+    animationId = requestAnimationFrame(draw);
+
+
+
+    analyser.getByteFrequencyData(dataArray);
+
+
+
+
+
+
+
+    // 배경 지우기 (약간의 잔상을 남기려면 투명도 조절)
+
+
+
+    ctx.fillStyle = 'rgba(10, 14, 20, 0.2)';
+
+
+
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+
+
+
+
+
+    // 소리 크기(주파수 평균치) 계산
+
+
+
+    let sum = 0;
+
+
+
+    for(let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+
+
+
+    let average = sum / dataArray.length;
+
+
+
+
+
+
+
+    // 🌊 물결 치는 원 그리기 (중앙에서 퍼져나가는 느낌)
+
+
+
+    ctx.beginPath();
+
+
+
+    ctx.arc(canvas.width / 2, canvas.height / 2, 100 + average * 2, 0, Math.PI * 2);
+
+
+
+    ctx.strokeStyle = `rgba(0, 212, 255, ${average / 255})`;
+
+
+
+    ctx.lineWidth = 5;
+
+
+
+    ctx.stroke();
+
+
+
+   
+
+
+
+    // 배경 전체가 일렁이는 효과를 주고 싶다면 CSS의 filter: blur나 scale을 조절해도 좋습니다.
+
+
+
+}
+
+
+
+    </script>
+
+
+
+</body>
+
+
+
+</html>
