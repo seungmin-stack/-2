@@ -57,13 +57,6 @@ async def upload_music(file: UploadFile = File(...)):
     else:
         python_exe = "python3"
 
-    print(f"현재 운영체제: {current_os}")
-    print(f"실행 명령어: {' '.join(command)}")
-
-    try:
-        subprocess.run(command, check=True)
-    except Exception as e:
-        return {"error": str(e)}
     
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as f:
@@ -75,9 +68,13 @@ async def upload_music(file: UploadFile = File(...)):
     # 여기서부터 실제 분리 명령
     command = ["py", "-m", "demucs.separate", "-n", "mdx_extra", "--shifts", "2", "-o", RESULT_DIR, file_path]
     
-    
+    print(f"현재 운영체제: {current_os}")
+    print(f"실행 명령어: {' '.join(command)}")
 
-
+    try:
+        subprocess.run(command, check=True)
+    except Exception as e:
+        return {"error": str(e)}
 
     # 2단계: AI 작업 시작 (이 부분은 시간이 오래 걸리므로 프론트에서 애니메이션 처리)
     result = subprocess.run(command)
