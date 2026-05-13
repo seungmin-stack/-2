@@ -66,7 +66,7 @@ async def upload_music(file: UploadFile = File(...)):
     
     python_exe = "py" if platform.system() == "Windows" else "python3"
     # 여기서부터 실제 분리 명령
-    command = ["py", "-m", "demucs.separate", "-n", "mdx_extra", "--shifts", "2", "-o", RESULT_DIR, file_path]
+    command = ["py", "-m", "demucs.separate", "-n", "htdemucs", "--shifts", "2", "-o", RESULT_DIR, file_path]
     
     print(f"현재 운영체제: {current_os}")
     print(f"실행 명령어: {' '.join(command)}")
@@ -88,7 +88,8 @@ async def upload_music(file: UploadFile = File(...)):
     
     if result.returncode == 0:
         folder_name = file.filename.rsplit('.', 1)[0]
-        base_url = f"/download/mdx_extra/{folder_name}"
+        # 반드시 htdemucs로 고쳐야 합니다! (우리가 실행한 모델 이름)
+        base_url = f"/download/htdemucs/{folder_name}"
         
         return {
             "status": "Success",
