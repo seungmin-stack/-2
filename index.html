@@ -518,7 +518,7 @@
         let wavesurfers = {};
 
         const trackNames = ['vocals', 'drums', 'bass', 'other'];
-        
+
         const host = "http://127.0.0.1:8000";
 
         const dropZone = document.getElementById('dropZone');
@@ -713,10 +713,10 @@
 
             try {
                 // 1. 서버에 파일 전송 (POST 요청)
-                const response = await fetch(host + "/separate", {
-                    method: "POST",
-                    body: formData
-                });
+               const response = await fetch('/separate', { // 앞에 주소를 다 지우고 /separate만 남기세요
+             method: 'POST',
+            body: formData
+            });
 
                 if (!response.ok) throw new Error("서버 응답 오류 (404 또는 500)");
 
