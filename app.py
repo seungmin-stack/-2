@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse # 추가
 import os
 import subprocess
 import platform
+import subprocess
 
 app = FastAPI()
 
@@ -50,11 +51,20 @@ async def read_root():
 async def upload_music(file: UploadFile = File(...)):
     # 1단계: 업로드 완료 (10%)
 
-    if platform.system() == "Windows":
+    current_os = platform.system()
+    if current_os == "Windows":
         python_exe = "py"
     else:
         python_exe = "python3"
 
+    print(f"현재 운영체제: {current_os}")
+    print(f"실행 명령어: {' '.join(command)}")
+
+    try:
+        subprocess.run(command, check=True)
+    except Exception as e:
+        return {"error": str(e)}
+    
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as f:
         f.write(await file.read())
@@ -65,13 +75,9 @@ async def upload_music(file: UploadFile = File(...)):
     # 여기서부터 실제 분리 명령
     command = ["py", "-m", "demucs.separate", "-n", "mdx_extra", "--shifts", "2", "-o", RESULT_DIR, file_path]
     
-    print(f"실행 명령어: {' '.join(command)}")
+    
 
-    try:
-        subprocess.run(command, check=True)
-    except Exception as e:
-        print(f"Demucs 실행 에러: {e}")
-        # 에러 발생 시 처리 로직...
+
 
     # 2단계: AI 작업 시작 (이 부분은 시간이 오래 걸리므로 프론트에서 애니메이션 처리)
     result = subprocess.run(command)
