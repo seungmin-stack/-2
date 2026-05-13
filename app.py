@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware # 추가
 from fastapi.responses import FileResponse # 추가
 import os
 import subprocess
+import platform
 
 app = FastAPI()
 
@@ -44,6 +45,7 @@ async def upload_music(file: UploadFile = File(...)):
     
     print(f"분리 시작: {file.filename}")
     
+    python_exe = "py" if platform.system() == "Windows" else "python3"
     # 여기서부터 실제 분리 명령
     command = ["py", "-m", "demucs.separate", "-n", "mdx_extra", "--shifts", "2", "-o", RESULT_DIR, file_path]
     
