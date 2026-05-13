@@ -49,46 +49,35 @@ async def read_root():
 
 @app.post("/separate")
 async def upload_music(file: UploadFile = File(...)):
-    # 1단계: 업로드 완료 (10%)
+    # 파일 저장 로직
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
 
+    # 1. 여기서 운영체제를 다시 한번 확실히 체크합니다.
     current_os = platform.system()
     if current_os == "Windows":
-        python_exe = "py"
+        exe = "py"
     else:
-        python_exe = "python3"
+        exe = "python3" # 리눅스(클라우드타입)는 무조건 python3
 
-    
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
-    
-    print(f"분리 시작: {file.filename}")
-    
-    python_exe = "py" if platform.system() == "Windows" else "python3"
-    # 여기서부터 실제 분리 명령
-    command = ["py", "-m", "demucs.separate", "-n", "htdemucs", "--shifts", "2", "-o", RESULT_DIR, file_path]
-    
-    print(f"현재 운영체제: {current_os}")
-    print(f"실행 명령어: {' '.join(command)}")
+    # 2. command 리스트의 첫 번째 항목을 위에서 정한 'exe'로 넣습니다.
+    command = [
+        exe, "-m", "demucs.separate", 
+        "-n", "htdemucs", 
+        "--shifts", "1", # 메모리 절약을 위해 1 추천
+        "-o", RESULT_DIR, 
+        file_path
+    ]
+
+    print(f"운영체제 확인: {current_os}")
+    print(f"최종 실행 명령어: {' '.join(command)}")
 
     try:
+        # 분리 실행
         subprocess.run(command, check=True)
-    except Exception as e:
-        return {"error": str(e)}
-
-    # 2단계: AI 작업 시작 (이 부분은 시간이 오래 걸리므로 프론트에서 애니메이션 처리)
-    result = subprocess.run(command)
-    
-    if result.returncode == 0:
-        # 3단계: 완료 (100%)
+        
         folder_name = file.filename.rsplit('.', 1)[0]
-    
-    # 작업 실행 (터미널에서 로그를 볼 수 있게 capture_output은 False 권장)
-    result = subprocess.run(command)
-    
-    if result.returncode == 0:
-        folder_name = file.filename.rsplit('.', 1)[0]
-        # 반드시 htdemucs로 고쳐야 합니다! (우리가 실행한 모델 이름)
         base_url = f"/download/htdemucs/{folder_name}"
         
         return {
@@ -100,5 +89,6 @@ async def upload_music(file: UploadFile = File(...)):
                 "other": f"{base_url}/other.wav"
             }
         }
-    else:
-        return {"status": "Error", "error": "AI Processing Failed"}
+    except Exception as e:
+        print(f"실행 에러: {str(e)}")
+        return {"status": "Error", "error": str(e)}
