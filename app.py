@@ -6,6 +6,8 @@ import os
 import subprocess
 import platform
 import subprocess
+import uuid
+
 
 app = FastAPI()
 
@@ -49,35 +51,32 @@ async def read_root():
 
 @app.post("/separate")
 async def upload_music(file: UploadFile = File(...)):
-    # 파일 저장 로직
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    # 1. 안전한 파일명 생성 (공백/특수문자 제거)
+    ext = file.filename.rsplit('.', 1)[-1]
+    safe_filename = f"{uuid.uuid4()}.{ext}" # 겹치지 않는 랜덤 이름
+    file_path = os.path.join(UPLOAD_DIR, safe_filename)
+    
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    # 1. 여기서 운영체제를 다시 한번 확실히 체크합니다.
-    current_os = platform.system()
-    if current_os == "Windows":
-        exe = "py"
-    else:
-        exe = "python3" # 리눅스(클라우드타입)는 무조건 python3
+    # 2. 시스템 확인
+    exe = "py" if platform.system() == "Windows" else "python3"
 
-    # 2. command 리스트의 첫 번째 항목을 위에서 정한 'exe'로 넣습니다.
+    # 3. 메모리 최적화 명령어 (htdemucs + --overlap 0.1)
     command = [
         exe, "-m", "demucs.separate", 
         "-n", "htdemucs", 
-        "--shifts", "1", # 메모리 절약을 위해 1 추천
+        "--shifts", "1",
+        "--overlap", "0.1", # 오버랩을 줄여 메모리 사용량 감소
         "-o", RESULT_DIR, 
         file_path
     ]
 
-    print(f"운영체제 확인: {current_os}")
-    print(f"최종 실행 명령어: {' '.join(command)}")
-
     try:
-        # 분리 실행
         subprocess.run(command, check=True)
         
-        folder_name = file.filename.rsplit('.', 1)[0]
+        # 4. 결과 폴더명은 Demucs가 생성한 이름(확장자 제외 safe_filename) 사용
+        folder_name = safe_filename.rsplit('.', 1)[0]
         base_url = f"/download/htdemucs/{folder_name}"
         
         return {
@@ -90,5 +89,6 @@ async def upload_music(file: UploadFile = File(...)):
             }
         }
     except Exception as e:
-        print(f"실행 에러: {str(e)}")
-        return {"status": "Error", "error": str(e)}
+        # 에러가 나면 로그에 상세 내용을 찍습니다.
+        print(f"Demucs 작업 중 상세 에러: {str(e)}")
+        return {"status": "Error", "error": "AI 처리 중 오류가 발생했습니다. 파일이 너무 크거나 메모리가 부족할 수 있습니다."}
