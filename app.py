@@ -7,6 +7,14 @@ import subprocess
 
 app = FastAPI()
 
+# FastAPI 앱 객체 생성 코드 아래에 추가
+if not os.path.exists("separated"):
+    os.makedirs("separated")
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+
+
+
 # ★ CORS 설정 추가: 브라우저 보안 차단 해제
 app.add_middleware(
     CORSMiddleware,
