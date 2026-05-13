@@ -63,15 +63,18 @@ async def upload_music(file: UploadFile = File(...)):
     exe = "py" if platform.system() == "Windows" else "python3"
 
     # 3. 메모리 최적화 명령어 (htdemucs + --overlap 0.1)
+    # ... (생략: 시스템 확인 및 파일 저장 로직) ...
+
     command = [
         exe, "-m", "demucs.separate", 
         "-n", "htdemucs", 
         "--shifts", "1",
-        "--overlap", "0.1", # 오버랩을 줄여 메모리 사용량 감소
+        "--overlap", "0.01", # 오버랩을 거의 없앰 (메모리 아끼기)
+        "--segment", "10",   # 10초씩 끊어서 처리 (메모리 사용량 대폭 감소)
         "-o", RESULT_DIR, 
         file_path
     ]
-
+    
     try:
         subprocess.run(command, check=True)
         
