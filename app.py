@@ -8,6 +8,16 @@ import platform
 
 app = FastAPI()
 
+# 1. 폴더 생성 로직을 최우선으로 실행
+UPLOAD_DIR = "uploads"
+RESULT_DIR = "separated"
+
+
+# 폴더가 없으면 생성 (exist_ok=True로 더 안전하게)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(RESULT_DIR, exist_ok=True)
+
+
 # FastAPI 앱 객체 생성 코드 아래에 추가
 if not os.path.exists("separated"):
     os.makedirs("separated")
