@@ -748,7 +748,7 @@
                     });
 
                     // 서버에서 받은 경로로 오디오 로드
-                    ws.load(host + data.links[name]);
+                    ws.load(data.links[name]);
                     wavesurfers[name] = ws;
 
                     // 구간 반복 기능 활성화
